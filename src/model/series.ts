@@ -5,7 +5,7 @@ import { VolumeFormatter } from '../formatters/volume-formatter';
 
 import { ensureDefined, ensureNotNull } from '../helpers/assertions';
 import { IDestroyable } from '../helpers/idestroyable';
-import { isInteger, merge } from '../helpers/strict-type-checks';
+import { DeepPartial, isInteger, merge } from '../helpers/strict-type-checks';
 
 import { SeriesAreaPaneView } from '../views/pane/area-pane-view';
 import { SeriesBarsPaneView } from '../views/pane/bars-pane-view';
@@ -50,6 +50,7 @@ import {
 	BaselineStyleOptions,
 	HistogramStyleOptions,
 	LineStyleOptions,
+	SeriesOptionsCommon,
 	SeriesOptionsMap,
 	SeriesPartialOptionsMap,
 	SeriesType,
@@ -261,12 +262,13 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 		return this._options as SeriesOptionsMap[T];
 	}
 
-	public applyOptions(options: SeriesPartialOptionsInternal<T>): void {
+	public applyOptions(options: SeriesPartialOptionsInternal<T> | DeepPartial<SeriesOptionsCommon>): void {
 		const targetPriceScaleId = options.priceScaleId;
 		if (targetPriceScaleId !== undefined && targetPriceScaleId !== this._options.priceScaleId) {
 			// series cannot do it itself, ask model
 			this.model().moveSeriesToScale(this, targetPriceScaleId);
 		}
+		const previousPaneIndex = this._options.pane ?? 0;
 		merge(this._options, options);
 
 		if (options.priceFormat !== undefined) {
@@ -279,6 +281,9 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 			this.model().fullUpdate();
 		}
 
+		if (options.pane && previousPaneIndex !== options.pane) {
+			this.model().moveSeriesToPane(this, previousPaneIndex, options.pane);
+		}
 		this.model().updateSource(this);
 
 		// a series might affect crosshair by some options (like crosshair markers)

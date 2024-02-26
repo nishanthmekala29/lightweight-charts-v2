@@ -5,6 +5,7 @@ import { AutoScaleMargins } from '../../model/autoscale-info-impl';
 import { BarPrice, BarPrices } from '../../model/bar';
 import { IChartModelBase } from '../../model/chart-model';
 import { Coordinate } from '../../model/coordinate';
+import { Pane } from '../../model/pane';
 import { PriceScale } from '../../model/price-scale';
 import { ISeries } from '../../model/series';
 import { InternalSeriesMarker } from '../../model/series-markers';
@@ -114,7 +115,7 @@ export class SeriesMarkersPaneView implements IUpdatablePaneView {
 		}
 	}
 
-	public renderer(addAnchors?: boolean): IPaneRenderer | null {
+	public renderer(pane: Pane, addAnchors?: boolean): IPaneRenderer | null {
 		if (!this._series.visible()) {
 			return null;
 		}

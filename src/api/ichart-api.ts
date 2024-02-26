@@ -73,12 +73,33 @@ export interface MouseEventParams<HorzScaleItem = Time> {
 	 * The underlying source mouse or touch event data, if available
 	 */
 	sourceEvent?: TouchMouseEventData;
+	paneIndex?: number;
 }
 
 /**
  * A custom function use to handle mouse events.
  */
 export type MouseEventHandler<HorzScaleItem> = (param: MouseEventParams<HorzScaleItem>) => void;
+
+
+export interface PaneEventParams<HorzScaleItem> {
+	/**
+	 * Time of the data at the location of the mouse event.
+	 *
+	 * The value will be `undefined` if the location of the event in the chart is outside the range of available data.
+	 */
+	time?: HorzScaleItem;
+	top: {
+		index: number;
+		height: number;
+	};
+	bottom: {
+		index: number;
+		height: number;
+	};
+}
+
+export type PaneEventHandler<HorzScaleItem> = (param: PaneEventParams<HorzScaleItem>) => void;
 
 /**
  * The main interface of a single chart.
@@ -328,7 +349,19 @@ export interface IChartApiBase<HorzScaleItem = Time> {
 	 *
 	 * @returns A canvas with the chart drawn on. Any `Canvas` methods like `toDataURL()` or `toBlob()` can be used to serialize the result.
 	 */
-	takeScreenshot(): HTMLCanvasElement;
+	takeScreenshot(): HTMLCanvasElement;/**
+	 * Adds a subscription to pane resize event
+	 *
+	 * @param handler - handler (function) to be called on pane resize
+	 */
+	subscribePaneResize(handler: PaneEventHandler<HorzScaleItem>): void;
+
+	/**
+	 * Removes pane resize subscription
+	 *
+	 * @param handler - previously subscribed handler
+	 */
+	unsubscribePaneResize(handler: PaneEventHandler<HorzScaleItem>): void;
 
 	/**
 	 * Returns the active state of the `autoSize` option. This can be used to check
@@ -370,4 +403,19 @@ export interface IChartApiBase<HorzScaleItem = Time> {
 	 * @returns Dimensions of the chart pane
 	 */
 	paneSize(): PaneSize;
+	/**
+	 * Removes a pane with index
+	 *
+	 * @param index the pane to be removed
+	 */
+	removePane(index: number): void;
+
+	/**
+	 * swap the position of two panes.
+	 *
+	 * @param first the first index
+	 * @param second the second index
+	 */
+	swapPane(first: number, second: number): void;
+	getPaneElements(): HTMLElement[];
 }

@@ -1,4 +1,5 @@
-import { ChartWidget, MouseEventParamsImpl, MouseEventParamsImplSupplier } from '../gui/chart-widget';
+import { ChartWidget, MouseEventParamsImpl, MouseEventParamsImplSupplier, PaneEventParamsImpl, PaneEventParamsImplSupplier, } from '../gui/chart-widget';
+import { PaneWidget } from '../gui/pane-widget';
 
 import { assert, ensure, ensureDefined } from '../helpers/assertions';
 import { Delegate } from '../helpers/delegate';
@@ -34,7 +35,7 @@ import {
 import { Logical } from '../model/time-data';
 
 import { getSeriesDataCreator } from './get-series-data-creator';
-import { IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize } from './ichart-api';
+import { IChartApiBase, MouseEventHandler, MouseEventParams, PaneSize, PaneEventHandler, PaneEventParams } from './ichart-api';
 import { IPriceScaleApi } from './iprice-scale-api';
 import { ISeriesApi } from './iseries-api';
 import { ITimeScaleApi } from './itime-scale-api';
@@ -122,6 +123,7 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 	private readonly _clickedDelegate: Delegate<MouseEventParams<HorzScaleItem>> = new Delegate();
 	private readonly _dblClickedDelegate: Delegate<MouseEventParams<HorzScaleItem>> = new Delegate();
 	private readonly _crosshairMovedDelegate: Delegate<MouseEventParams<HorzScaleItem>> = new Delegate();
+	private readonly _paneResizeDelegate: Delegate<PaneEventParams<HorzScaleItem>> = new Delegate();
 
 	private readonly _timeScaleApi: TimeScaleApi<HorzScaleItem>;
 
@@ -156,6 +158,14 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 			(paramSupplier: MouseEventParamsImplSupplier) => {
 				if (this._crosshairMovedDelegate.hasListeners()) {
 					this._crosshairMovedDelegate.fire(this._convertMouseParams(paramSupplier()));
+				}
+			},
+			this
+		);
+		this._chartWidget.paneResized().subscribe(
+			(paramSupplier: PaneEventParamsImplSupplier) => {
+				if (this._paneResizeDelegate.hasListeners()) {
+					this._paneResizeDelegate.fire(this._convertPaneResizeParams(paramSupplier()));
 				}
 			},
 			this
@@ -362,6 +372,25 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 
 		return res;
 	}
+	public subscribePaneResize(handler: PaneEventHandler<HorzScaleItem>): void {
+		this._paneResizeDelegate.subscribe(handler);
+	}
+
+	public unsubscribePaneResize(handler: PaneEventHandler<HorzScaleItem>): void {
+		this._paneResizeDelegate.unsubscribe(handler);
+	}
+
+	public removePane(index: number): void {
+		this._chartWidget.model().removePane(index);
+	}
+
+	public swapPane(first: number, second: number): void {
+		this._chartWidget.model().swapPane(first, second);
+	}
+
+	public getPaneElements(): HTMLElement[] {
+		return this._chartWidget.paneWidgets().map((paneWidget: PaneWidget) => paneWidget.getPaneCell());
+	}
 
 	private _sendUpdateToChart(update: DataUpdateResponse): void {
 		const model = this._chartWidget.model();
@@ -395,11 +424,25 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 		return {
 			time: param.originalTime as HorzScaleItem,
 			logical: param.index as Logical | undefined,
+			paneIndex: param.paneIndex,
 			point: param.point,
 			hoveredSeries,
 			hoveredObjectId: param.hoveredObject,
 			seriesData,
 			sourceEvent: param.touchMouseEventData,
+		};
+	}
+	private _convertPaneResizeParams(param: PaneEventParamsImpl): PaneEventParams<HorzScaleItem> {
+		return {
+			time: param.originalTime as HorzScaleItem,
+			top: {
+				index: param.top.index,
+				height: param.top.height,
+			},
+			bottom: {
+				index: param.bottom.index,
+				height: param.bottom.height,
+			},
 		};
 	}
 }
