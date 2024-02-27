@@ -12,7 +12,8 @@ import { IPaneRenderer } from '../../renderers/ipane-renderer';
 import { MarksRendererData, PaneRendererMarks } from '../../renderers/marks-renderer';
 
 import { IUpdatablePaneView, UpdateType } from './iupdatable-pane-view';
-import {Series} from "../../model/series";
+import {ISeries} from "../../model/series";
+import {SeriesType} from "../../model/series-options";
 
 function createEmptyMarkerData(): MarksRendererData {
 	return {
@@ -61,7 +62,7 @@ export class CrosshairMarksPaneView implements IUpdatablePaneView {
 		this._validated.clear();
 	}
 
-	public renderer(pane: Pane, addAnchors?: boolean): IPaneRenderer | null {
+	public renderer(pane: Pane): IPaneRenderer | null {
 		let renderers = this._validated.get(pane);
 		if (!renderers) {
 			renderers = this._updateImpl(pane);
@@ -82,12 +83,12 @@ export class CrosshairMarksPaneView implements IUpdatablePaneView {
 		const forceHidden = this._crosshair.options().mode === CrosshairMode.Hidden;
 
 		const serieses = this._chartModel.serieses()
-			.map((datasource: IPriceDataSource, index: number): [Series, number] => [datasource as Series, index])
+			.map((datasource: IPriceDataSource, index: number): [ISeries<SeriesType>, number] => [datasource as ISeries<SeriesType>, index])
 			.filter((entry: [IPriceDataSource, number]) => pane.dataSources().includes(entry[0]));
 		const timePointIndex = this._crosshair.appliedIndex();
 		const timeScale = this._chartModel.timeScale();
 
-		return serieses.map(([s, index]: [Series, number]) => {
+		return serieses.map(([s, index]: [ISeries<SeriesType>, number]) => {
 			const data = this._markersData[index];
 			const seriesData = s.markerDataAtIndex(timePointIndex);
 

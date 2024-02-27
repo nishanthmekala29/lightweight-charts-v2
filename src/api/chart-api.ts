@@ -53,6 +53,7 @@ import {
 import { PriceScaleApi } from './price-scale-api';
 import { SeriesApi } from './series-api';
 import { TimeScaleApi } from './time-scale-api';
+import {IPriceDataSource} from "../model/iprice-data-source";
 
 function patchPriceFormat(priceFormat?: DeepPartial<PriceFormat>): void {
 	if (priceFormat === undefined || priceFormat.type === 'custom') {
@@ -332,12 +333,11 @@ export class ChartApi<HorzScaleItem> implements IChartApiBase<HorzScaleItem>, Da
 
 	public setCrosshairPosition(price: number, horizontalPosition: HorzScaleItem, seriesApi: ISeriesApi<SeriesType, HorzScaleItem>): void {
 		const series = this._seriesMap.get(seriesApi as SeriesApi<SeriesType, HorzScaleItem>);
-
 		if (series === undefined) {
 			return;
 		}
 
-		const pane = this._chartWidget.model().paneForSource(series);
+		const pane = this._chartWidget.model().paneForSource(series as unknown as IPriceDataSource);
 
 		if (pane === null) {
 			return;

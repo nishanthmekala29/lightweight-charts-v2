@@ -385,7 +385,7 @@ export interface IChartModelBase {
 	options(): Readonly<ChartOptionsInternalBase>;
 	timeScale(): ITimeScale;
 	serieses(): readonly ISeries<SeriesType>[];
-
+	getPaneIndex(pane: Pane): number
 	updateSource(source: IPriceDataSource): void;
 	updateCrosshair(): void;
 	cursorUpdate(): void;
@@ -466,12 +466,12 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		this._options = options;
 		this._horzScaleBehavior = horzScaleBehavior;
 
-		this._rendererOptionsProvider = new PriceAxisRendererOptionsProvider(this);
+		this._rendererOptionsProvider = new PriceAxisRendererOptionsProvider(this as unknown as IChartModelBase);
 
 		this._timeScale = new TimeScale(this, options.timeScale, this._options.localization, horzScaleBehavior);
-		this._crosshair = new Crosshair(this, options.crosshair);
+		this._crosshair = new Crosshair(this as unknown as IChartModelBase, options.crosshair);
 		this._magnet = new Magnet(options.crosshair);
-		this._watermark = new Watermark(this, options.watermark);
+		this._watermark = new Watermark(this as unknown as IChartModelBase, options.watermark);
 
 		this.createPane();
 		this._panes[0].setStretchFactor(DEFAULT_STRETCH_FACTOR * 2);
@@ -624,7 +624,7 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 
 		const actualIndex = (index === undefined) ? (this._panes.length - 1) + 1 : index;
 
-		const pane = new Pane(this._timeScale, this, actualIndex);
+		const pane = new Pane(this._timeScale, this as unknown as IChartModelBase, actualIndex);
 		if (index !== undefined) {
 			this._panes.splice(index, 0, pane);
 		} else {
@@ -802,8 +802,8 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		this.lightUpdate();
 	}
 
-	public serieses(): readonly Series<SeriesType>[] {
-		return this._serieses;
+	public serieses(): readonly ISeries<SeriesType>[] {
+		return this._serieses as unknown as ISeries<SeriesType>[];
 	}
 
 	public setAndSaveCurrentPosition(x: Coordinate, y: Coordinate, event: TouchMouseEventData | null, pane: Pane, skipEvent?: boolean): void {
@@ -959,19 +959,19 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	public removeSeries(series: Series<SeriesType>): void {
-		const pane = this.paneForSource(series);
+		const pane = this.paneForSource(series as unknown as IPriceDataSource);
 
 		const seriesIndex = this._serieses.indexOf(series);
 		assert(seriesIndex !== -1, 'Series not found');
 
 		this._serieses.splice(seriesIndex, 1);
-		ensureNotNull(pane).removeDataSource(series);
+		ensureNotNull(pane).removeDataSource(series as unknown as IPriceDataSource);
 		if (series.destroy) {
 			series.destroy();
 		}
 	}
 
-	public moveSeriesToScale(series: Series<SeriesType>, targetScaleId: string): void {
+	public moveSeriesToScale(series: ISeries<SeriesType>, targetScaleId: string): void {
 		const pane = ensureNotNull(this.paneForSource(series));
 		pane.removeDataSource(series);
 
@@ -980,12 +980,12 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		if (target === null) {
 			// new scale on the same pane
 			const zOrder = series.zorder();
-			pane.addDataSource(series, targetScaleId, zOrder);
+			pane.addDataSource(series, targetScaleId, (zOrder === null) ? undefined : zOrder);
 		} else {
 			// if move to the new scale of the same pane, keep zorder
 			// if move to new pane
 			const zOrder = (target.pane === pane) ? series.zorder() : undefined;
-			target.pane.addDataSource(series, targetScaleId, zOrder);
+			target.pane.addDataSource(series, targetScaleId, (zOrder === null) ? undefined : zOrder);
 		}
 	}
 
@@ -1035,7 +1035,7 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		return this._options.rightPriceScale.visible ? DefaultPriceScaleId.Right : DefaultPriceScaleId.Left;
 	}
 
-	public moveSeriesToPane(series: Series, fromPaneIndex: number, newPaneIndex: number): void {
+	public moveSeriesToPane(series: ISeries<SeriesType>, fromPaneIndex: number, newPaneIndex: number): void {
 		if (newPaneIndex === fromPaneIndex || this._suppressSeriesMoving) {
 			// no change
 			return;
@@ -1120,15 +1120,15 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 	}
 
 	private _createSeries<T extends SeriesType>(options: SeriesOptionsInternal<T>, seriesType: T, pane: Pane, customPaneView?: ICustomSeriesPaneView<HorzScaleItem>): Series<T> {
-		const series = new Series<T>(this, options, seriesType, pane, customPaneView);
-		this._addSeriesToPane(series, pane);
+		const series = new Series<T>(this as unknown as IChartModelBase, options, seriesType, pane, customPaneView);
+		this._addSeriesToPane(series as unknown as ISeries<SeriesType>, pane);
 		return series
 	}
 
-	private _addSeriesToPane(series: Series, pane: Pane): void {
+	private _addSeriesToPane(series: ISeries<SeriesType>, pane: Pane): void {
 		const priceScaleId = series.options().priceScaleId;
 		const targetScaleId: string = priceScaleId !== undefined ? priceScaleId : this.defaultVisiblePriceScaleId();
-		pane.addDataSource(series, targetScaleId);
+		pane.addDataSource(series as unknown as IPriceDataSource, targetScaleId);
 
 		if (!isDefaultPriceScale(targetScaleId)) {
 			// let's apply that options again to apply margins

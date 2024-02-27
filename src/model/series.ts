@@ -135,6 +135,7 @@ export interface ISeries<T extends SeriesType> extends IPriceDataSource {
 	bars(): SeriesPlotList<T>;
 	visible(): boolean;
 	options(): Readonly<SeriesOptionsMap[T]>;
+	applyOptions(options: SeriesPartialOptionsInternal<T> | DeepPartial<SeriesOptionsCommon>): void;
 	title(): string;
 	priceScale(): PriceScale;
 	lastValueData(globalLast: boolean): LastValueDataResult;
@@ -150,9 +151,9 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 	private readonly _priceAxisViews: IPriceAxisView[];
 	private readonly _panePriceAxisView: PanePriceAxisView;
 	private _formatter!: IPriceFormatter;
-	private readonly _priceLineView: SeriesPriceLinePaneView = new SeriesPriceLinePaneView(this);
+	private readonly _priceLineView: SeriesPriceLinePaneView = new SeriesPriceLinePaneView(this as unknown as ISeries<SeriesType>);
 	private readonly _customPriceLines: CustomPriceLine[] = [];
-	private readonly _baseHorizontalLineView: SeriesHorizontalBaseLinePaneView = new SeriesHorizontalBaseLinePaneView(this);
+	private readonly _baseHorizontalLineView: SeriesHorizontalBaseLinePaneView = new SeriesHorizontalBaseLinePaneView(this as unknown as ISeries<SeriesType>);
 	private _paneView!: IUpdatablePaneView | SeriesCustomPaneView;
 	private readonly _lastPriceAnimationPaneView: SeriesLastPriceAnimationPaneView | null = null;
 	private _barColorerCache: SeriesBarColorer<T> | null = null;
@@ -168,13 +169,13 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 		this._options = options;
 		this._seriesType = seriesType;
 
-		const priceAxisView = new SeriesPriceAxisView(this);
+		const priceAxisView = new SeriesPriceAxisView(this as unknown as ISeries<SeriesType>);
 		this._priceAxisViews = [priceAxisView];
 
-		this._panePriceAxisView = new PanePriceAxisView(priceAxisView, this, model);
+		this._panePriceAxisView = new PanePriceAxisView(priceAxisView, this as unknown as PriceDataSource, model);
 
 		if (seriesType === 'Area' || seriesType === 'Line' || seriesType === 'Baseline') {
-			this._lastPriceAnimationPaneView = new SeriesLastPriceAnimationPaneView(this as Series<'Area'> | Series<'Line'> | Series<'Baseline'>);
+			this._lastPriceAnimationPaneView = new SeriesLastPriceAnimationPaneView(this as unknown as  ISeries<'Area'> | ISeries<'Line'> | ISeries<'Baseline'>);
 		}
 
 		this._recreateFormatter();
@@ -266,7 +267,7 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 		const targetPriceScaleId = options.priceScaleId;
 		if (targetPriceScaleId !== undefined && targetPriceScaleId !== this._options.priceScaleId) {
 			// series cannot do it itself, ask model
-			this.model().moveSeriesToScale(this, targetPriceScaleId);
+			this.model().moveSeriesToScale(this as unknown as ISeries<SeriesType>, targetPriceScaleId);
 		}
 		const previousPaneIndex = this._options.pane ?? 0;
 		merge(this._options, options);
@@ -282,9 +283,9 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 		}
 
 		if (options.pane && previousPaneIndex !== options.pane) {
-			this.model().moveSeriesToPane(this, previousPaneIndex, options.pane);
+			this.model().moveSeriesToPane(this as unknown as ISeries<SeriesType>, previousPaneIndex, options.pane);
 		}
-		this.model().updateSource(this);
+		this.model().updateSource(this as unknown as IPriceDataSource);
 
 		// a series might affect crosshair by some options (like crosshair markers)
 		// that's why we need to update crosshair as well
@@ -309,9 +310,9 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 			}
 		}
 
-		const sourcePane = this.model().paneForSource(this);
+		const sourcePane = this.model().paneForSource(this as unknown as IPriceDataSource);
 		this.model().recalculatePane(sourcePane);
-		this.model().updateSource(this);
+		this.model().updateSource(this as unknown as IPriceDataSource);
 		this.model().updateCrosshair();
 		this.model().lightUpdate();
 	}
@@ -319,10 +320,10 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 	public setMarkers(data: readonly SeriesMarker<InternalHorzScaleItem>[]): void {
 		this._markers = data;
 		this._recalculateMarkers();
-		const sourcePane = this.model().paneForSource(this);
+		const sourcePane = this.model().paneForSource(this as unknown as IPriceDataSource);
 		this._markersPaneView.update('data');
 		this.model().recalculatePane(sourcePane);
-		this.model().updateSource(this);
+		this.model().updateSource(this as unknown as IPriceDataSource);
 		this.model().updateCrosshair();
 		this.model().lightUpdate();
 	}
@@ -336,9 +337,9 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 	}
 
 	public createPriceLine(options: PriceLineOptions): CustomPriceLine {
-		const result = new CustomPriceLine(this, options);
+		const result = new CustomPriceLine(this as unknown as ISeries<SeriesType>, options);
 		this._customPriceLines.push(result);
-		this.model().updateSource(this);
+		this.model().updateSource(this as unknown as IPriceDataSource);
 		return result;
 	}
 
@@ -347,7 +348,7 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 		if (index !== -1) {
 			this._customPriceLines.splice(index, 1);
 		}
-		this.model().updateSource(this);
+		this.model().updateSource(this as unknown as IPriceDataSource);
 	}
 
 	public seriesType(): T {
@@ -745,21 +746,21 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 	}
 
 	private _recreatePaneViews(customPaneView?: ICustomSeriesPaneView<unknown>): void {
-		this._markersPaneView = new SeriesMarkersPaneView(this, this.model());
+		this._markersPaneView = new SeriesMarkersPaneView(this as unknown as ISeries<SeriesType>, this.model());
 
 		switch (this._seriesType) {
 			case 'Bar': {
-				this._paneView = new SeriesBarsPaneView(this as Series<'Bar'>, this.model());
+				this._paneView = new SeriesBarsPaneView(this as unknown as ISeries<'Bar'>, this.model());
 				break;
 			}
 
 			case 'Candlestick': {
-				this._paneView = new SeriesCandlesticksPaneView(this as Series<'Candlestick'>, this.model());
+				this._paneView = new SeriesCandlesticksPaneView(this as unknown as ISeries<'Candlestick'>, this.model());
 				break;
 			}
 
 			case 'Line': {
-				this._paneView = new SeriesLinePaneView(this as Series<'Line'>, this.model());
+				this._paneView = new SeriesLinePaneView(this as unknown as ISeries<'Line'>, this.model());
 				break;
 			}
 
@@ -769,17 +770,17 @@ export class Series<T extends SeriesType> extends PriceDataSource implements IDe
 			}
 
 			case 'Area': {
-				this._paneView = new SeriesAreaPaneView(this as Series<'Area'>, this.model());
+				this._paneView = new SeriesAreaPaneView(this as unknown as ISeries<'Area'>, this.model());
 				break;
 			}
 
 			case 'Baseline': {
-				this._paneView = new SeriesBaselinePaneView(this as Series<'Baseline'>, this.model());
+				this._paneView = new SeriesBaselinePaneView(this as unknown as ISeries<'Baseline'>, this.model());
 				break;
 			}
 
 			case 'Histogram': {
-				this._paneView = new SeriesHistogramPaneView(this as Series<'Histogram'>, this.model());
+				this._paneView = new SeriesHistogramPaneView(this as unknown as ISeries<'Histogram'>, this.model());
 				break;
 			}
 

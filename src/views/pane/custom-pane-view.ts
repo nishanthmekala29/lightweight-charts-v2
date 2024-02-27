@@ -14,7 +14,7 @@ import {
 	PriceToCoordinateConverter,
 } from '../../model/icustom-series';
 import { PriceScale } from '../../model/price-scale';
-import { Series } from '../../model/series';
+import {ISeries, Series} from '../../model/series';
 import { SeriesPlotRow } from '../../model/series-data';
 import { TimedValue } from '../../model/time-data';
 import { ITimeScale } from '../../model/time-scale';
@@ -62,7 +62,7 @@ export class SeriesCustomPaneView extends SeriesPaneViewBase<
 		model: IChartModelBase,
 		paneView: ICustomSeriesPaneView<unknown>
 	) {
-		super(series, model, false);
+		super(series as unknown as ISeries<'Custom'>, model, false);
 		this._paneView = paneView;
 		this._renderer = new CustomSeriesPaneRendererWrapper(
 			this._paneView.renderer(),

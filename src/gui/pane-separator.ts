@@ -5,6 +5,7 @@ import { clamp } from '../helpers/mathex';
 import { IChartWidgetBase, PaneEventParamsImplSupplier } from './chart-widget';
 import { MouseEventHandler, MouseEventHandlers, TouchMouseEvent } from './mouse-event-handler';
 import { PaneWidget } from './pane-widget';
+import {size, Size} from "fancy-canvas";
 
 export const SEPARATOR_HEIGHT = 1;
 
@@ -94,25 +95,25 @@ export class PaneSeparator implements IDestroyable {
 		return this._rowElement;
 	}
 
-	// public getSize(): Size {
-	// 	return size({
-	// 		width: this._paneA.getSize().width,
-	// 		height: SEPARATOR_HEIGHT,
-	// 	});
-	// }
+	public getSize(): Size {
+		return size({
+			width: this._paneA.getSize().width,
+			height: SEPARATOR_HEIGHT,
+		});
+	}
 
-	// public getBitmapSize(): Size {
-	// 	return size({
-	// 		width: this._paneA.getBitmapSize().width,
-	// 		height: SEPARATOR_HEIGHT * window.devicePixelRatio,
-	// 	});
-	// }
+	public getBitmapSize(): Size {
+		return size({
+			width: this._paneA.getBitmapSize().width,
+			height: SEPARATOR_HEIGHT * window.devicePixelRatio,
+		});
+	}
 
-	// public drawBitmap(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-	// 	const bitmapSize = this.getBitmapSize();
-	// 	ctx.fillStyle = this._chartWidget.options().timeScale.borderColor;
-	// 	ctx.fillRect(x, y, bitmapSize.width, bitmapSize.height);
-	// }
+	public drawBitmap(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+		const bitmapSize = this.getBitmapSize();
+		ctx.fillStyle = this._chartWidget.options().timeScale.borderColor;
+		ctx.fillRect(x, y, bitmapSize.width, bitmapSize.height);
+	}
 
 	public update(): void {
 		this._updateBorderColor();
@@ -163,11 +164,11 @@ export class PaneSeparator implements IDestroyable {
 		this._resizeDelegate.fire(() => ({
 			top: {
 				index: this._topPaneIndex,
-				height: this._paneA.getSize().h,
+				height: this._paneA.getSize().height,
 			},
 			bottom: {
 				index: this._bottomPaneIndex,
-				height: this._paneB.getSize().h,
+				height: this._paneB.getSize().height,
 			},
 		}));
 	}

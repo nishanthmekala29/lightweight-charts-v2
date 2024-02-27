@@ -21,7 +21,7 @@ import {
 	TimeScaleInvalidationType,
 } from '../model/invalidate-mask';
 import { Point } from '../model/point';
-import { Series } from '../model/series';
+import {ISeries, Series} from '../model/series';
 import { SeriesPlotRow } from '../model/series-data';
 import { SeriesType } from '../model/series-options';
 import { TimePointIndex } from '../model/time-data';
@@ -64,6 +64,7 @@ export interface IChartWidgetBase {
 	model(): IChartModelBase;
 	paneWidgets(): PaneWidget[];
 	options(): ChartOptionsInternalBase;
+	adjustSize(): void;
 	setCursorStyle(style: string | null): void;
 }
 
@@ -152,7 +153,7 @@ export class ChartWidget<HorzScaleItem> implements IDestroyable, IChartWidgetBas
 	}
 
 	public model(): ChartModel<HorzScaleItem> {
-		return this._model;
+		return this._model
 	}
 
 	public options(): Readonly<ChartOptionsInternal<HorzScaleItem>> {
@@ -390,14 +391,14 @@ export class ChartWidget<HorzScaleItem> implements IDestroyable, IChartWidgetBas
 					priceAxisWidget.drawBitmap(ctx, targetX, targetY);
 				}
 				targetY += bitmapSize.height;
-				// if (paneIndex < this._paneWidgets.length - 1) {
-				// 	const separator = this._paneSeparators[paneIndex];
-				// 	const separatorBitmapSize = separator.getBitmapSize();
-				// 	if (ctx !== null) {
-				// 		separator.drawBitmap(ctx, targetX, targetY);
-				// 	}
-				// 	targetY += separatorBitmapSize.height;
-				// }
+				if (paneIndex < this._paneWidgets.length - 1) {
+					const separator = this._paneSeparators[paneIndex];
+					const separatorBitmapSize = separator.getBitmapSize();
+					if (ctx !== null) {
+						separator.drawBitmap(ctx, targetX, targetY);
+					}
+					targetY += separatorBitmapSize.height;
+				}
 			}
 		};
 
@@ -414,14 +415,14 @@ export class ChartWidget<HorzScaleItem> implements IDestroyable, IChartWidgetBas
 				paneWidget.drawBitmap(ctx, totalWidth, totalHeight);
 			}
 			totalHeight += bitmapSize.height;
-			// if (paneIndex < this._paneWidgets.length - 1) {
-			// 	const separator = this._paneSeparators[paneIndex];
-			// 	const separatorBitmapSize = separator.getBitmapSize();
-			// 	if (ctx !== null) {
-			// 		separator.drawBitmap(ctx, totalWidth, totalHeight);
-			// 	}
-			// 	totalHeight += separatorBitmapSize.height;
-			// }
+			if (paneIndex < this._paneWidgets.length - 1) {
+				const separator = this._paneSeparators[paneIndex];
+				const separatorBitmapSize = separator.getBitmapSize();
+				if (ctx !== null) {
+					separator.drawBitmap(ctx, totalWidth, totalHeight);
+				}
+				totalHeight += separatorBitmapSize.height;
+			}
 		}
 		const firstPaneBitmapWidth = firstPane.getBitmapSize().width;
 		totalWidth += firstPaneBitmapWidth;
@@ -792,11 +793,11 @@ export class ChartWidget<HorzScaleItem> implements IDestroyable, IChartWidgetBas
 		const seriesData = new Map<Series<SeriesType>, SeriesPlotRow<SeriesType>>();
 		if (index !== null) {
 			const serieses = this._model.serieses();
-			serieses.forEach((s: Series<SeriesType>) => {
+			serieses.forEach((s: ISeries<SeriesType>) => {
 				// TODO: replace with search left
 				const data = s.bars().search(index);
 				if (data !== null) {
-					seriesData.set(s, data);
+					seriesData.set(s as unknown as Series<SeriesType>, data);
 				}
 			});
 		}
