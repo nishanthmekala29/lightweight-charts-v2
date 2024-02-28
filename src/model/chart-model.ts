@@ -675,7 +675,7 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 
 		this._panes.splice(index, 1);
 		this._suppressSeriesMoving = false;
-
+		this._buildPaneIndexMapping();
 		const mask = new InvalidateMask(InvalidationLevel.Full);
 		this._invalidate(mask);
 	}
@@ -700,6 +700,7 @@ export class ChartModel<HorzScaleItem> implements IDestroyable, IChartModelBase 
 		this._panes[second] = firstPane;
 
 		this._suppressSeriesMoving = false;
+		this._buildPaneIndexMapping();
 		this._invalidate(new InvalidateMask(InvalidationLevel.Full));
 	}
 

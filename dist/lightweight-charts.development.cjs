@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.2.0-dev+202402280844
+ * TradingView Lightweight Charts™ v4.2.0-dev+202402281151
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -7621,6 +7621,7 @@ class ChartModel {
         }
         this._private__panes.splice(index, 1);
         this._private__suppressSeriesMoving = false;
+        this._private__buildPaneIndexMapping();
         const mask = new InvalidateMask(3 /* InvalidationLevel.Full */);
         this._private__invalidate(mask);
     }
@@ -7641,6 +7642,7 @@ class ChartModel {
         this._private__panes[first] = secondPane;
         this._private__panes[second] = firstPane;
         this._private__suppressSeriesMoving = false;
+        this._private__buildPaneIndexMapping();
         this._private__invalidate(new InvalidateMask(3 /* InvalidationLevel.Full */));
     }
     _internal_startScalePrice(pane, priceScale, x) {
@@ -13262,7 +13264,7 @@ const customSeriesDefaultOptions = Object.assign(Object.assign({}, seriesOptions
  * Returns the current version as a string. For example `'3.3.0'`.
  */
 function version() {
-    return "4.2.0-dev+202402280844";
+    return "4.2.0-dev+202402281151";
 }
 
 exports.createChart = createChart;
