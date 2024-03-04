@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.2.0-dev+202402281151
+ * TradingView Lightweight Charts™ v4.2.0-dev+202403041416
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -4909,7 +4909,7 @@ class Series extends PriceDataSource {
             : [2 /* PlotRowValueIndex.Low */, 1 /* PlotRowValueIndex.High */];
         const barsMinMax = this._private__data._internal_minMaxOnRangeCached(startTimePoint, endTimePoint, plots);
         let range = barsMinMax !== null ? new PriceRangeImpl(barsMinMax._internal_min, barsMinMax._internal_max) : null;
-        if (this._internal_seriesType() === 'Histogram') {
+        if (this._internal_seriesType() === 'Histogram' && this._private__isOverlay()) {
             const base = this._private__options.base;
             const rangeWithBase = new PriceRangeImpl(base, base);
             range = range !== null ? range._internal_merge(rangeWithBase) : rangeWithBase;
@@ -13262,7 +13262,7 @@ const customSeriesDefaultOptions = Object.assign(Object.assign({}, seriesOptions
  * Returns the current version as a string. For example `'3.3.0'`.
  */
 function version() {
-    return "4.2.0-dev+202402281151";
+    return "4.2.0-dev+202403041416";
 }
 
 export { ColorType, CrosshairMode, LastPriceAnimationMode, LineStyle, LineType, MismatchDirection, PriceLineSource, PriceScaleMode, TickMarkType, TrackingModeExitMode, createChart, createChartEx, customSeriesDefaultOptions, isBusinessDay, isUTCTimestamp, version };
