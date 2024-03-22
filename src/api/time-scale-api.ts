@@ -165,6 +165,15 @@ export class TimeScaleApi<HorzScaleItem> implements ITimeScaleApi<HorzScaleItem>
 		return this._timeAxisWidget.getSize().height;
 	}
 
+	public formatDateTime(time: HorzScaleItem): string {
+		const timeScale = this._model.timeScale();
+		const internalHorzScaleTime = this._horzScaleBehavior.convertHorzItemToInternal(time)
+		const timePointIndex = timeScale.timeToIndex(internalHorzScaleTime, false);
+		if (!timePointIndex) return "";
+		const timePoint = timeScale.indexToTimeScalePoint(timePointIndex);
+		return timePoint ? timeScale.formatDateTime(timePoint) : ""
+	}
+
 	public subscribeVisibleTimeRangeChange(handler: TimeRangeChangeEventHandler<HorzScaleItem>): void {
 		this._timeRangeChanged.subscribe(handler);
 	}

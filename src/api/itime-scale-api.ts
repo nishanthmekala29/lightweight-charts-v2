@@ -1,6 +1,7 @@
 import { DeepPartial } from '../helpers/strict-type-checks';
 
 import { Coordinate } from '../model/coordinate';
+import { Time } from '../model/horz-scale-behavior-time/types';
 import { Logical, LogicalRange, Range } from '../model/time-data';
 import { HorzScaleOptions } from '../model/time-scale';
 
@@ -135,6 +136,8 @@ export interface ITimeScaleApi<HorzScaleItem> {
 	 * Returns a height of the time scale.
 	 */
 	height(): number;
+
+	formatDateTime(time: HorzScaleItem): string
 
 	/**
 	 * Subscribe to the visible time range change events.

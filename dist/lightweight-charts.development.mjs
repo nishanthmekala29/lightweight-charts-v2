@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.2.0-dev+202403041416
+ * TradingView Lightweight Charts™ v4.2.0-dev+202403220543
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -12894,6 +12894,15 @@ class TimeScaleApi {
     height() {
         return this._private__timeAxisWidget._internal_getSize().height;
     }
+    formatDateTime(time) {
+        const timeScale = this._private__model._internal_timeScale();
+        const internalHorzScaleTime = this._private__horzScaleBehavior.convertHorzItemToInternal(time);
+        const timePointIndex = timeScale._internal_timeToIndex(internalHorzScaleTime, false);
+        if (!timePointIndex)
+            return "";
+        const timePoint = timeScale._internal_indexToTimeScalePoint(timePointIndex);
+        return timePoint ? timeScale._internal_formatDateTime(timePoint) : "";
+    }
     subscribeVisibleTimeRangeChange(handler) {
         this._private__timeRangeChanged._internal_subscribe(handler);
     }
@@ -13262,7 +13271,7 @@ const customSeriesDefaultOptions = Object.assign(Object.assign({}, seriesOptions
  * Returns the current version as a string. For example `'3.3.0'`.
  */
 function version() {
-    return "4.2.0-dev+202403041416";
+    return "4.2.0-dev+202403220543";
 }
 
 export { ColorType, CrosshairMode, LastPriceAnimationMode, LineStyle, LineType, MismatchDirection, PriceLineSource, PriceScaleMode, TickMarkType, TrackingModeExitMode, createChart, createChartEx, customSeriesDefaultOptions, isBusinessDay, isUTCTimestamp, version };

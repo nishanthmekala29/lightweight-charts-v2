@@ -2218,6 +2218,7 @@ export interface ITimeScaleApi<HorzScaleItem> {
 	 * Returns a height of the time scale.
 	 */
 	height(): number;
+	formatDateTime(time: HorzScaleItem): string;
 	/**
 	 * Subscribe to the visible time range change events.
 	 *
