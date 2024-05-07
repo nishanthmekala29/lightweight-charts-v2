@@ -146,6 +146,14 @@ export class TimeScaleApi<HorzScaleItem> implements ITimeScaleApi<HorzScaleItem>
 		return this._timeScale.indexToCoordinate(timePointIndex);
 	}
 
+	public timeToIndex(time: InternalHorzScaleItem, findNearest: boolean): TimePointIndex | null {
+		return this._timeScale.timeToIndex(time, findNearest);
+	}
+
+	public indexToCoordinate(index: TimePointIndex): Coordinate {
+		return this._timeScale.indexToCoordinate(index);
+	}
+
 	public coordinateToTime(x: number): HorzScaleItem | null {
 		const timeScale = this._model.timeScale();
 		const timePointIndex = timeScale.coordinateToIndex(x as Coordinate);
