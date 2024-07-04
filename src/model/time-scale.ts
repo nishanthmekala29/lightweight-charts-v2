@@ -131,6 +131,13 @@ export interface HorzScaleOptions {
 	visible: boolean;
 
 	/**
+	 * The minimum visible bars in chart when reached the right end of data.
+	 *
+	 * @defaultValue `2`
+	 */
+	minimumVisibleBarsFromRight: number;
+
+	/**
 	 * Show the time, not just the date, in the time scale and vertical crosshair label.
 	 *
 	 * @defaultValue `false`
@@ -904,7 +911,7 @@ export class TimeScale<HorzScaleItem> implements ITimeScale {
 	private _maxRightOffset(): number {
 		return this._options.fixRightEdge
 			? 0
-			: (this._width / this._barSpacing) - Math.min(Constants.MinVisibleBarsCount, this._points.length);
+			: (this._width / this._barSpacing) - Math.min(this.options().minimumVisibleBarsFromRight ?? Constants.MinVisibleBarsCount, this._points.length);
 	}
 
 	private _saveCommonTransitionsStartState(): void {

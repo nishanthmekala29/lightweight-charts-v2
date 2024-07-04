@@ -1117,6 +1117,12 @@ export interface HorzScaleOptions {
 	 */
 	visible: boolean;
 	/**
+	 * The minimum visible bars in chart when reached the right end of data.
+	 *
+	 * @defaultValue `2`
+	 */
+	minimumVisibleBarsFromRight: number;
+	/**
 	 * Show the time, not just the date, in the time scale and vertical crosshair label.
 	 *
 	 * @defaultValue `false`

@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.3.0-dev+202405071152
+ * TradingView Lightweight Charts™ v4.3.1-dev+202407041442
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -7183,9 +7183,10 @@
             return firstIndex - baseIndex - 1 + barsEstimation;
         }
         _private__maxRightOffset() {
+            var _a;
             return this._private__options.fixRightEdge
                 ? 0
-                : (this._private__width / this._private__barSpacing) - Math.min(2 /* Constants.MinVisibleBarsCount */, this._private__points.length);
+                : (this._private__width / this._private__barSpacing) - Math.min((_a = this._internal_options().minimumVisibleBarsFromRight) !== null && _a !== void 0 ? _a : 2 /* Constants.MinVisibleBarsCount */, this._private__points.length);
         }
         _private__saveCommonTransitionsStartState() {
             this._private__commonTransitionStartState = {
@@ -12825,6 +12826,7 @@
         rightOffset: 0,
         barSpacing: 6,
         minBarSpacing: 0.5,
+        minimumVisibleBarsFromRight: 2,
         fixLeftEdge: false,
         fixRightEdge: false,
         lockVisibleTimeRangeOnResize: false,
@@ -13675,7 +13677,7 @@
      * Returns the current version as a string. For example `'3.3.0'`.
      */
     function version() {
-        return "4.3.0-dev+202405071152";
+        return "4.3.1-dev+202407041442";
     }
 
     var LightweightChartsModule = /*#__PURE__*/Object.freeze({
