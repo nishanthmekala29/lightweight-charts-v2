@@ -7,6 +7,7 @@ import {
 	HistogramStyleOptions,
 	LastPriceAnimationMode,
 	LineStyleOptions,
+	MarkerType,
 	PriceLineSource,
 	SeriesOptionsCommon,
 } from '../../model/series-options';
@@ -43,6 +44,8 @@ export const lineStyleDefaults: LineStyleOptions = {
 	crosshairMarkerBorderColor: '',
 	crosshairMarkerBorderWidth: 2,
 	crosshairMarkerBackgroundColor: '',
+	withBreaks: false,
+	markerType: MarkerType.None,
 	lastPriceAnimation: LastPriceAnimationMode.Disabled,
 	pointMarkersVisible: false,
 };
@@ -55,6 +58,7 @@ export const areaStyleDefaults: AreaStyleOptions = {
 	lineStyle: LineStyle.Solid,
 	lineWidth: 3,
 	lineType: LineType.Simple,
+	withBreaks: false,
 	lineVisible: true,
 	crosshairMarkerVisible: true,
 	crosshairMarkerRadius: 4,
@@ -97,6 +101,8 @@ export const baselineStyleDefaults: BaselineStyleOptions = {
 export const histogramStyleDefaults: HistogramStyleOptions = {
 	color: '#26a69a',
 	base: 0,
+	columns: false,
+	columnWidth: 1,
 };
 
 export const customStyleDefaults: CustomStyleOptions = {

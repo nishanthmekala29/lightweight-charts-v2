@@ -7,6 +7,7 @@ import { SeriesItemsIndexesRange, TimedValue } from '../model/time-data';
 import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-renderer';
 import { LinePoint, LineStyle, LineType, LineWidth, setLineStyle } from './draw-line';
 import { walkLine } from './walk-line';
+import { MarkerType } from '../model/series-options';
 
 export type AreaFillItemBase = TimedValue & PricedValue & LinePoint;
 export interface PaneRendererAreaDataBase<TItem extends AreaFillItemBase = AreaFillItemBase> {
@@ -14,7 +15,8 @@ export interface PaneRendererAreaDataBase<TItem extends AreaFillItemBase = AreaF
 	lineType: LineType;
 	lineWidth: LineWidth;
 	lineStyle: LineStyle;
-
+	withBreaks: boolean;
+	markerType: MarkerType;
 	baseLevelCoordinate: Coordinate | null;
 	invertFilledArea: boolean;
 
@@ -50,7 +52,7 @@ export abstract class PaneRendererAreaBase<TData extends PaneRendererAreaDataBas
 			return;
 		}
 
-		const { items, visibleRange, barWidth, lineWidth, lineStyle, lineType } = this._data;
+		const { items, visibleRange, barWidth, lineWidth, lineStyle, lineType, withBreaks, markerType } = this._data;
 		const baseLevelCoordinate =
 			this._data.baseLevelCoordinate ??
 				(this._data.invertFilledArea ? 0 : renderingScope.mediaSize.height) as Coordinate;
@@ -69,7 +71,7 @@ export abstract class PaneRendererAreaBase<TData extends PaneRendererAreaDataBas
 		// walk lines with width=1 to have more accurate gradient's filling
 		ctx.lineWidth = 1;
 
-		walkLine(renderingScope, items, lineType, visibleRange, barWidth, this._fillStyle.bind(this), finishStyledArea.bind(null, baseLevelCoordinate));
+		walkLine(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, this._fillStyle.bind(this), finishStyledArea.bind(null, baseLevelCoordinate));
 	}
 
 	protected abstract _fillStyle(renderingScope: BitmapCoordinatesRenderingScope, item: TData['items'][0]): CanvasRenderingContext2D['fillStyle'];
