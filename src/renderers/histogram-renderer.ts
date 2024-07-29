@@ -17,7 +17,8 @@ export interface PaneRendererHistogramData {
 
 	barSpacing: number;
 	histogramBase: number;
-
+	columns: boolean;
+	columnWidth: number;
 	visibleRange: SeriesItemsIndexesRange | null;
 }
 
@@ -48,6 +49,7 @@ export class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
 
 		const tickWidth = Math.max(1, Math.floor(verticalPixelRatio));
 		const histogramBase = Math.round((this._data.histogramBase) * verticalPixelRatio);
+		const { columns, columnWidth } = this._data;
 		const topHistogramBase = histogramBase - Math.floor(tickWidth / 2);
 		const bottomHistogramBase = topHistogramBase + tickWidth;
 
@@ -55,7 +57,6 @@ export class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
 			const item = this._data.items[i];
 			const current = this._precalculatedCache[i - this._data.visibleRange.from];
 			const y = Math.round(item.y * verticalPixelRatio);
-			ctx.fillStyle = item.barColor;
 
 			let top: number;
 			let bottom: number;
@@ -68,7 +69,19 @@ export class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
 				bottom = y - Math.floor(tickWidth / 2) + tickWidth;
 			}
 
-			ctx.fillRect(current.left, top, current.right - current.left + 1, bottom - top);
+			if (columns) {
+				ctx.lineCap = 'square';
+				ctx.lineWidth = columnWidth * horizontalPixelRatio;
+				ctx.beginPath();
+				const x = current.left + (current.right - current.left) / 2;
+				ctx.moveTo(x, top);
+				ctx.lineTo(x, bottom);
+				ctx.strokeStyle = item.barColor;
+				ctx.stroke();
+			} else {
+				ctx.fillStyle = item.barColor;
+				ctx.fillRect(current.left, top, current.right - current.left + 1, bottom - top);
+			}
 		}
 	}
 

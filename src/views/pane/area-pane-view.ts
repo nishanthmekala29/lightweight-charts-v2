@@ -1,13 +1,14 @@
-import { BarPrice } from '../../model/bar';
-import { IChartModelBase } from '../../model/chart-model';
-import { ISeries } from '../../model/series';
-import { ISeriesBarColorer } from '../../model/series-bar-colorer';
-import { TimePointIndex } from '../../model/time-data';
-import { AreaFillItem, PaneRendererArea } from '../../renderers/area-renderer';
-import { CompositeRenderer } from '../../renderers/composite-renderer';
-import { LineStrokeItem, PaneRendererLine } from '../../renderers/line-renderer';
+import {BarPrice} from '../../model/bar';
+import {IChartModelBase} from '../../model/chart-model';
+import {ISeries} from '../../model/series';
+import {ISeriesBarColorer} from '../../model/series-bar-colorer';
+import {TimePointIndex} from '../../model/time-data';
+import {AreaFillItem, PaneRendererArea} from '../../renderers/area-renderer';
+import {CompositeRenderer} from '../../renderers/composite-renderer';
+import {LineStrokeItem, PaneRendererLine} from '../../renderers/line-renderer';
 
-import { LinePaneViewBase } from './line-pane-view-base';
+import {LinePaneViewBase} from './line-pane-view-base';
+import {MarkerType} from "../../model/series-options";
 
 export class SeriesAreaPaneView extends LinePaneViewBase<'Area', AreaFillItem & LineStrokeItem, CompositeRenderer> {
 	protected readonly _renderer: CompositeRenderer = new CompositeRenderer();
@@ -34,6 +35,8 @@ export class SeriesAreaPaneView extends LinePaneViewBase<'Area', AreaFillItem & 
 			items: this._items,
 			lineStyle: options.lineStyle,
 			lineWidth: options.lineWidth,
+			withBreaks: options.withBreaks,
+			markerType: MarkerType.None,
 			baseLevelCoordinate: null,
 			invertFilledArea: options.invertFilledArea,
 			visibleRange: this._itemsVisibleRange,
@@ -45,6 +48,8 @@ export class SeriesAreaPaneView extends LinePaneViewBase<'Area', AreaFillItem & 
 			items: this._items,
 			lineStyle: options.lineStyle,
 			lineWidth: options.lineWidth,
+			withBreaks: options.withBreaks,
+			markerType: MarkerType.None,
 			visibleRange: this._itemsVisibleRange,
 			barWidth: this._model.timeScale().barSpacing(),
 			pointMarkersRadius: options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,

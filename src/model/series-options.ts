@@ -110,6 +110,20 @@ export const enum LastPriceAnimationMode {
 }
 
 /**
+ * Represents the type of the marker shape for series to draw with(currently applicable for area and line series).
+ */
+export const enum MarkerType {
+	/**
+	 * Marker is  none
+	 */
+	None,
+	/**
+	 * Marker is Diamond.
+	 */
+	Diamond
+}
+
+/**
  * Represents style options for a bar series.
  */
 export interface BarStyleOptions {
@@ -175,11 +189,25 @@ export interface LineStyleOptions {
 	lineType: LineType;
 
 	/**
+	 * Draw series with breaks.
+	 *
+	 * @defaultValue `false`
+	 */
+	withBreaks: boolean;
+
+	/**
 	 * Show series line.
 	 *
 	 * @defaultValue `true`
 	 */
 	lineVisible: boolean;
+
+	/**
+	 * marker type to draw series with.
+	 *
+	 * @defaultValue `None`
+	 */
+	markerType: MarkerType;
 
 	/**
 	 * Show circle markers on each point.
@@ -292,6 +320,13 @@ export interface AreaStyleOptions {
 	 * @defaultValue `true`
 	 */
 	lineVisible: boolean;
+
+	/**
+	 * Draw series with breaks.
+	 *
+	 * @defaultValue `false`
+	 */
+	withBreaks: boolean;
 
 	/**
 	 * Show circle markers on each point.
@@ -509,6 +544,20 @@ export interface HistogramStyleOptions {
 	 * @defaultValue `0`
 	 */
 	base: number;
+
+	/**
+	 * draws columns instead of histograms when enabled.
+	 *
+	 * @defaultValue `false`
+	 */
+	columns: boolean;
+
+	/**
+	 * thickness of the columns.
+	 *
+	 * @defaultValue `1`
+	 */
+	columnWidth: number;
 }
 
 /**

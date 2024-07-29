@@ -7,6 +7,7 @@ import { BitmapCoordinatesPaneRenderer } from './bitmap-coordinates-pane-rendere
 import { LinePoint, LineStyle, LineType, LineWidth, setLineStyle } from './draw-line';
 import { drawSeriesPointMarkers } from './draw-series-point-markers';
 import { walkLine } from './walk-line';
+import {MarkerType} from "../model/series-options";
 
 export type LineItemBase = TimedValue & PricedValue & LinePoint;
 
@@ -14,6 +15,10 @@ export interface PaneRendererLineDataBase<TItem extends LineItemBase = LineItemB
 	lineType?: LineType;
 
 	items: TItem[];
+
+	withBreaks: boolean;
+
+	markerType: MarkerType;
 
 	barWidth: number;
 
@@ -43,7 +48,7 @@ export abstract class PaneRendererLineBase<TData extends PaneRendererLineDataBas
 			return;
 		}
 
-		const { items, visibleRange, barWidth, lineType, lineWidth, lineStyle, pointMarkersRadius } = this._data;
+		const { items, visibleRange, barWidth, lineType, lineWidth, lineStyle, pointMarkersRadius, withBreaks, markerType } = this._data;
 
 		if (visibleRange === null) {
 			return;
@@ -61,7 +66,7 @@ export abstract class PaneRendererLineBase<TData extends PaneRendererLineDataBas
 		const styleGetter = this._strokeStyle.bind(this);
 
 		if (lineType !== undefined) {
-			walkLine(renderingScope, items, lineType, visibleRange, barWidth, styleGetter, finishStyledArea);
+			walkLine(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, styleGetter, finishStyledArea);
 		}
 
 		if (pointMarkersRadius) {

@@ -1,13 +1,14 @@
-import { BarPrice } from '../../model/bar';
-import { IChartModelBase } from '../../model/chart-model';
-import { ISeries } from '../../model/series';
-import { ISeriesBarColorer } from '../../model/series-bar-colorer';
-import { TimePointIndex } from '../../model/time-data';
-import { BaselineFillItem, PaneRendererBaselineArea } from '../../renderers/baseline-renderer-area';
-import { BaselineStrokeItem, PaneRendererBaselineLine } from '../../renderers/baseline-renderer-line';
-import { CompositeRenderer } from '../../renderers/composite-renderer';
+import {BarPrice} from '../../model/bar';
+import {IChartModelBase} from '../../model/chart-model';
+import {ISeries} from '../../model/series';
+import {ISeriesBarColorer} from '../../model/series-bar-colorer';
+import {TimePointIndex} from '../../model/time-data';
+import {BaselineFillItem, PaneRendererBaselineArea} from '../../renderers/baseline-renderer-area';
+import {BaselineStrokeItem, PaneRendererBaselineLine} from '../../renderers/baseline-renderer-line';
+import {CompositeRenderer} from '../../renderers/composite-renderer';
 
-import { LinePaneViewBase } from './line-pane-view-base';
+import {LinePaneViewBase} from './line-pane-view-base';
+import {MarkerType} from "../../model/series-options";
 
 export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', BaselineFillItem & BaselineStrokeItem, CompositeRenderer> {
 	protected readonly _renderer: CompositeRenderer = new CompositeRenderer();
@@ -39,11 +40,11 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 
 		this._baselineAreaRenderer.setData({
 			items: this._items,
-
+			withBreaks: false,
 			lineWidth: options.lineWidth,
 			lineStyle: options.lineStyle,
 			lineType: options.lineType,
-
+			markerType: MarkerType.None,
 			baseLevelCoordinate,
 			invertFilledArea: false,
 
@@ -58,7 +59,8 @@ export class SeriesBaselinePaneView extends LinePaneViewBase<'Baseline', Baselin
 			lineStyle: options.lineStyle,
 			lineType: options.lineVisible ? options.lineType : undefined,
 			pointMarkersRadius: options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
-
+			withBreaks: false,
+			markerType: MarkerType.None,
 			baseLevelCoordinate,
 
 			visibleRange: this._itemsVisibleRange,

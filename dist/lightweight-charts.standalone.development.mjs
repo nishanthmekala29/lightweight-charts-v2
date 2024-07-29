@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.3.1-dev+202407041442
+ * TradingView Lightweight Charts™ v4.3.1-dev+202407291514
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -33,6 +33,8 @@ const lineStyleDefaults = {
     crosshairMarkerBorderColor: '',
     crosshairMarkerBorderWidth: 2,
     crosshairMarkerBackgroundColor: '',
+    withBreaks: false,
+    markerType: 0 /* MarkerType.None */,
     lastPriceAnimation: 0 /* LastPriceAnimationMode.Disabled */,
     pointMarkersVisible: false,
 };
@@ -44,6 +46,7 @@ const areaStyleDefaults = {
     lineStyle: 0 /* LineStyle.Solid */,
     lineWidth: 3,
     lineType: 0 /* LineType.Simple */,
+    withBreaks: false,
     lineVisible: true,
     crosshairMarkerVisible: true,
     crosshairMarkerRadius: 4,
@@ -79,6 +82,8 @@ const baselineStyleDefaults = {
 const histogramStyleDefaults = {
     color: '#26a69a',
     base: 0,
+    columns: false,
+    columnWidth: 1,
 };
 const customStyleDefaults = {
     color: '#2196f3',
@@ -120,6 +125,14 @@ var LineType;
      * A curved line.
      */
     LineType[LineType["Curved"] = 2] = "Curved";
+    /**
+     * Line with crosses.
+     */
+    LineType[LineType["Cross"] = 3] = "Cross";
+    /**
+     * Line with circles.
+     */
+    LineType[LineType["Circle"] = 4] = "Circle";
 })(LineType || (LineType = {}));
 /**
  * Represents the possible line styles.
@@ -1896,19 +1909,79 @@ class VolumeFormatter {
     }
 }
 
-// eslint-disable-next-line max-params, complexity
-function walkLine(renderingScope, items, lineType, visibleRange, barWidth, 
+// eslint-disable-next-line max-params
+function walkLine(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, 
 // the values returned by styleGetter are compared using the operator !==,
 // so if styleGetter returns objects, then styleGetter should return the same object for equal styles
 styleGetter, finishStyledArea) {
     if (items.length === 0 || visibleRange.from >= items.length || visibleRange.to <= 0) {
         return;
     }
+    if (withBreaks) {
+        const groups = breakIntoGroups(items, visibleRange);
+        for (let i = 0; i < groups.length; i++) {
+            walkLineImpl(renderingScope, items, lineType, groups[i], barWidth, withBreaks, markerType, styleGetter, finishStyledArea);
+        }
+        return;
+    }
+    walkLineImpl(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, styleGetter, finishStyledArea);
+}
+// eslint-disable-next-line max-params, complexity
+function walkLineImpl(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, 
+// the values returned by styleGetter are compared using the operator !==,
+// so if styleGetter returns objects, then styleGetter should return the same object for equal styles
+styleGetter, finishStyledArea) {
     const { context: ctx, horizontalPixelRatio, verticalPixelRatio } = renderingScope;
     const firstItem = items[visibleRange.from];
     let currentStyle = styleGetter(renderingScope, firstItem);
     let currentStyleFirstItem = firstItem;
-    if (visibleRange.to - visibleRange.from < 2) {
+    const changeStyle = (newStyle, currentItem) => {
+        finishStyledArea(renderingScope, currentStyle, currentStyleFirstItem, currentItem);
+        ctx.beginPath();
+        currentStyle = newStyle;
+        currentStyleFirstItem = currentItem;
+    };
+    if ([4 /* LineType.Circle */, 3 /* LineType.Cross */].includes(lineType)) {
+        ctx.beginPath();
+        for (let i = visibleRange.from; i < visibleRange.to; ++i) {
+            const currentItem = items[i];
+            const itemStyle = styleGetter(renderingScope, currentItem);
+            if (lineType !== 1 /* LineType.WithSteps */ && itemStyle !== currentStyle) {
+                changeStyle(itemStyle, currentItem);
+            }
+            ctx.moveTo(currentItem._internal_x * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio);
+            switch (lineType) {
+                case 4 /* LineType.Circle */:
+                    ctx.fillStyle = currentStyle;
+                    ctx.arc(currentItem._internal_x * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio, ctx.lineWidth / 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                case 3 /* LineType.Cross */: {
+                    // Define the center point (a, b)
+                    const a = currentItem._internal_x * horizontalPixelRatio;
+                    const b = currentItem._internal_y * verticalPixelRatio;
+                    // Define the threshold x
+                    const x = ctx.lineWidth;
+                    // Calculate the half width/height of the plus
+                    const halfBoxSize = (3 * x) / 2;
+                    // Draw the horizontal line
+                    ctx.beginPath();
+                    ctx.moveTo(a - halfBoxSize, b); // Start point
+                    ctx.lineTo(a + halfBoxSize, b); // End point
+                    ctx.strokeStyle = currentStyle;
+                    ctx.stroke();
+                    // Draw the vertical line
+                    ctx.beginPath();
+                    ctx.moveTo(a, b - halfBoxSize); // Start point
+                    ctx.lineTo(a, b + halfBoxSize); // End point
+                    ctx.strokeStyle = currentStyle;
+                    ctx.stroke();
+                    break;
+                }
+            }
+        }
+    }
+    else if (visibleRange.to - visibleRange.from < 2) {
         const halfBarWidth = barWidth / 2;
         ctx.beginPath();
         const item1 = { _internal_x: firstItem._internal_x - halfBarWidth, _internal_y: firstItem._internal_y };
@@ -1918,15 +1991,15 @@ styleGetter, finishStyledArea) {
         finishStyledArea(renderingScope, currentStyle, item1, item2);
     }
     else {
-        const changeStyle = (newStyle, currentItem) => {
-            finishStyledArea(renderingScope, currentStyle, currentStyleFirstItem, currentItem);
-            ctx.beginPath();
-            currentStyle = newStyle;
-            currentStyleFirstItem = currentItem;
-        };
         let currentItem = currentStyleFirstItem;
+        const halfBarWidth = barWidth / 2;
         ctx.beginPath();
-        ctx.moveTo(firstItem._internal_x * horizontalPixelRatio, firstItem._internal_y * verticalPixelRatio);
+        if ([1 /* LineType.WithSteps */].includes(lineType)) {
+            ctx.moveTo((firstItem._internal_x - halfBarWidth) * horizontalPixelRatio, firstItem._internal_y * verticalPixelRatio);
+        }
+        else {
+            ctx.moveTo(firstItem._internal_x * horizontalPixelRatio, firstItem._internal_y * verticalPixelRatio);
+        }
         for (let i = visibleRange.from + 1; i < visibleRange.to; ++i) {
             currentItem = items[i];
             const itemStyle = styleGetter(renderingScope, currentItem);
@@ -1935,12 +2008,15 @@ styleGetter, finishStyledArea) {
                     ctx.lineTo(currentItem._internal_x * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio);
                     break;
                 case 1 /* LineType.WithSteps */:
-                    ctx.lineTo(currentItem._internal_x * horizontalPixelRatio, items[i - 1]._internal_y * verticalPixelRatio);
+                    ctx.lineTo((currentItem._internal_x - halfBarWidth) * horizontalPixelRatio, items[i - 1]._internal_y * verticalPixelRatio);
                     if (itemStyle !== currentStyle) {
                         changeStyle(itemStyle, currentItem);
-                        ctx.lineTo(currentItem._internal_x * horizontalPixelRatio, items[i - 1]._internal_y * verticalPixelRatio);
+                        ctx.lineTo((currentItem._internal_x - halfBarWidth) * horizontalPixelRatio, items[i - 1]._internal_y * verticalPixelRatio);
                     }
-                    ctx.lineTo(currentItem._internal_x * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio);
+                    ctx.lineTo((currentItem._internal_x - halfBarWidth) * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio);
+                    if (i === visibleRange.to - 1) {
+                        ctx.lineTo(currentItem._internal_x * horizontalPixelRatio, currentItem._internal_y * verticalPixelRatio);
+                    }
                     break;
                 case 2 /* LineType.Curved */: {
                     const [cp1, cp2] = getControlPoints(items, i - 1, i);
@@ -1955,6 +2031,18 @@ styleGetter, finishStyledArea) {
         }
         if (currentStyleFirstItem !== currentItem || currentStyleFirstItem === currentItem && lineType === 1 /* LineType.WithSteps */) {
             finishStyledArea(renderingScope, currentStyle, currentStyleFirstItem, currentItem);
+        }
+    }
+    if (markerType !== 0 /* MarkerType.None */) {
+        currentStyle = styleGetter(renderingScope, firstItem);
+        const halfBarWidth = barWidth / 2;
+        for (let i = visibleRange.from; i < visibleRange.to; ++i) {
+            const currentItem = items[i];
+            const itemStyle = styleGetter(renderingScope, currentItem);
+            if (itemStyle !== currentStyle) {
+                changeStyle(itemStyle, currentItem);
+            }
+            drawMarker(renderingScope, currentStyle, markerType, { _internal_x: (lineType === 1 /* LineType.WithSteps */) ? (items[i]._internal_x - halfBarWidth) : items[i]._internal_x, _internal_y: items[i]._internal_y }, ctx.lineWidth * 3);
         }
     }
 }
@@ -1978,6 +2066,55 @@ function getControlPoints(points, fromPointIndex, toPointIndex) {
     const cp2 = subtract(points[toPointIndex], divide(subtract(points[afterToPointIndex], points[fromPointIndex]), curveTension));
     return [cp1, cp2];
 }
+function drawMarker(renderingScope, style, markerType, point, size) {
+    switch (markerType) {
+        case 0 /* MarkerType.None */: return;
+        case 1 /* MarkerType.Diamond */: {
+            drawDiamond(renderingScope, style, point, size);
+            break;
+        }
+    }
+}
+function drawDiamond(renderingScope, style, point, size) {
+    const { context: ctx, horizontalPixelRatio, verticalPixelRatio } = renderingScope;
+    const a = point._internal_x * horizontalPixelRatio;
+    const b = point._internal_y * verticalPixelRatio;
+    ctx.beginPath(); // Start a new path
+    ctx.moveTo(a, b - size); // Move to the top point
+    ctx.lineTo(a + size, b); // Draw line to the right point
+    ctx.lineTo(a, b + size); // Draw line to the bottom point
+    ctx.lineTo(a - size, b); // Draw line to the left point
+    ctx.closePath(); // Close the path
+    ctx.fillStyle = style;
+    ctx.fill();
+}
+function breakIntoGroups(items, visibleRange) {
+    const ranges = [];
+    let lastRange;
+    for (let i = visibleRange.from; i < visibleRange.to; i++) {
+        if (isLinePointValid(items[i])) {
+            if (!lastRange) {
+                lastRange = { from: i, to: i + 1 };
+            }
+            else {
+                lastRange.to = i + 1;
+            }
+        }
+        else {
+            if (lastRange) {
+                ranges.push(lastRange);
+            }
+            lastRange = undefined;
+        }
+    }
+    if (lastRange) {
+        ranges.push(lastRange);
+    }
+    return ranges;
+}
+function isLinePointValid(point) {
+    return point._internal_y && !Number.isNaN(point._internal_y);
+}
 
 function finishStyledArea$1(baseLevelCoordinate, scope, style, areaFirstItem, newAreaFirstItem) {
     const { context, horizontalPixelRatio, verticalPixelRatio } = scope;
@@ -2000,7 +2137,7 @@ class PaneRendererAreaBase extends BitmapCoordinatesPaneRenderer {
         if (this._internal__data === null) {
             return;
         }
-        const { _internal_items: items, _internal_visibleRange: visibleRange, _internal_barWidth: barWidth, _internal_lineWidth: lineWidth, _internal_lineStyle: lineStyle, _internal_lineType: lineType } = this._internal__data;
+        const { _internal_items: items, _internal_visibleRange: visibleRange, _internal_barWidth: barWidth, _internal_lineWidth: lineWidth, _internal_lineStyle: lineStyle, _internal_lineType: lineType, _internal_withBreaks: withBreaks, _internal_markerType: markerType } = this._internal__data;
         const baseLevelCoordinate = (_a = this._internal__data._internal_baseLevelCoordinate) !== null && _a !== void 0 ? _a : (this._internal__data._internal_invertFilledArea ? 0 : renderingScope.mediaSize.height);
         if (visibleRange === null) {
             return;
@@ -2012,7 +2149,7 @@ class PaneRendererAreaBase extends BitmapCoordinatesPaneRenderer {
         setLineStyle(ctx, lineStyle);
         // walk lines with width=1 to have more accurate gradient's filling
         ctx.lineWidth = 1;
-        walkLine(renderingScope, items, lineType, visibleRange, barWidth, this._internal__fillStyle.bind(this), finishStyledArea$1.bind(null, baseLevelCoordinate));
+        walkLine(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, this._internal__fillStyle.bind(this), finishStyledArea$1.bind(null, baseLevelCoordinate));
     }
 }
 
@@ -2148,7 +2285,7 @@ class PaneRendererLineBase extends BitmapCoordinatesPaneRenderer {
         if (this._internal__data === null) {
             return;
         }
-        const { _internal_items: items, _internal_visibleRange: visibleRange, _internal_barWidth: barWidth, _internal_lineType: lineType, _internal_lineWidth: lineWidth, _internal_lineStyle: lineStyle, _internal_pointMarkersRadius: pointMarkersRadius } = this._internal__data;
+        const { _internal_items: items, _internal_visibleRange: visibleRange, _internal_barWidth: barWidth, _internal_lineType: lineType, _internal_lineWidth: lineWidth, _internal_lineStyle: lineStyle, _internal_pointMarkersRadius: pointMarkersRadius, _internal_withBreaks: withBreaks, _internal_markerType: markerType } = this._internal__data;
         if (visibleRange === null) {
             return;
         }
@@ -2159,7 +2296,7 @@ class PaneRendererLineBase extends BitmapCoordinatesPaneRenderer {
         ctx.lineJoin = 'round';
         const styleGetter = this._internal__strokeStyle.bind(this);
         if (lineType !== undefined) {
-            walkLine(renderingScope, items, lineType, visibleRange, barWidth, styleGetter, finishStyledArea);
+            walkLine(renderingScope, items, lineType, visibleRange, barWidth, withBreaks, markerType, styleGetter, finishStyledArea);
         }
         if (pointMarkersRadius) {
             drawSeriesPointMarkers(renderingScope, items, pointMarkersRadius, visibleRange, styleGetter);
@@ -2335,6 +2472,8 @@ class SeriesAreaPaneView extends LinePaneViewBase {
             _internal_items: this._internal__items,
             _internal_lineStyle: options.lineStyle,
             _internal_lineWidth: options.lineWidth,
+            _internal_withBreaks: options.withBreaks,
+            _internal_markerType: 0 /* MarkerType.None */,
             _internal_baseLevelCoordinate: null,
             _internal_invertFilledArea: options.invertFilledArea,
             _internal_visibleRange: this._internal__itemsVisibleRange,
@@ -2345,6 +2484,8 @@ class SeriesAreaPaneView extends LinePaneViewBase {
             _internal_items: this._internal__items,
             _internal_lineStyle: options.lineStyle,
             _internal_lineWidth: options.lineWidth,
+            _internal_withBreaks: options.withBreaks,
+            _internal_markerType: 0 /* MarkerType.None */,
             _internal_visibleRange: this._internal__itemsVisibleRange,
             _internal_barWidth: this._internal__model._internal_timeScale()._internal_barSpacing(),
             _internal_pointMarkersRadius: options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
@@ -2554,9 +2695,11 @@ class SeriesBaselinePaneView extends LinePaneViewBase {
         const barWidth = this._internal__model._internal_timeScale()._internal_barSpacing();
         this._private__baselineAreaRenderer._internal_setData({
             _internal_items: this._internal__items,
+            _internal_withBreaks: false,
             _internal_lineWidth: options.lineWidth,
             _internal_lineStyle: options.lineStyle,
             _internal_lineType: options.lineType,
+            _internal_markerType: 0 /* MarkerType.None */,
             _internal_baseLevelCoordinate: baseLevelCoordinate,
             _internal_invertFilledArea: false,
             _internal_visibleRange: this._internal__itemsVisibleRange,
@@ -2568,6 +2711,8 @@ class SeriesBaselinePaneView extends LinePaneViewBase {
             _internal_lineStyle: options.lineStyle,
             _internal_lineType: options.lineVisible ? options.lineType : undefined,
             _internal_pointMarkersRadius: options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
+            _internal_withBreaks: false,
+            _internal_markerType: 0 /* MarkerType.None */,
             _internal_baseLevelCoordinate: baseLevelCoordinate,
             _internal_visibleRange: this._internal__itemsVisibleRange,
             _internal_barWidth: barWidth,
@@ -2819,13 +2964,13 @@ class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
         }
         const tickWidth = Math.max(1, Math.floor(verticalPixelRatio));
         const histogramBase = Math.round((this._private__data._internal_histogramBase) * verticalPixelRatio);
+        const { _internal_columns: columns, _internal_columnWidth: columnWidth } = this._private__data;
         const topHistogramBase = histogramBase - Math.floor(tickWidth / 2);
         const bottomHistogramBase = topHistogramBase + tickWidth;
         for (let i = this._private__data._internal_visibleRange.from; i < this._private__data._internal_visibleRange.to; i++) {
             const item = this._private__data._internal_items[i];
             const current = this._private__precalculatedCache[i - this._private__data._internal_visibleRange.from];
             const y = Math.round(item._internal_y * verticalPixelRatio);
-            ctx.fillStyle = item._internal_barColor;
             let top;
             let bottom;
             if (y <= topHistogramBase) {
@@ -2836,7 +2981,20 @@ class PaneRendererHistogram extends BitmapCoordinatesPaneRenderer {
                 top = topHistogramBase;
                 bottom = y - Math.floor(tickWidth / 2) + tickWidth;
             }
-            ctx.fillRect(current._internal_left, top, current._internal_right - current._internal_left + 1, bottom - top);
+            if (columns) {
+                ctx.lineCap = 'square';
+                ctx.lineWidth = columnWidth * horizontalPixelRatio;
+                ctx.beginPath();
+                const x = current._internal_left + (current._internal_right - current._internal_left) / 2;
+                ctx.moveTo(x, top);
+                ctx.lineTo(x, bottom);
+                ctx.strokeStyle = item._internal_barColor;
+                ctx.stroke();
+            }
+            else {
+                ctx.fillStyle = item._internal_barColor;
+                ctx.fillRect(current._internal_left, top, current._internal_right - current._internal_left + 1, bottom - top);
+            }
         }
     }
     // eslint-disable-next-line complexity
@@ -2933,6 +3091,8 @@ class SeriesHistogramPaneView extends LinePaneViewBase {
             _internal_barSpacing: this._internal__model._internal_timeScale()._internal_barSpacing(),
             _internal_visibleRange: this._internal__itemsVisibleRange,
             _internal_histogramBase: this._internal__series._internal_priceScale()._internal_priceToCoordinate(this._internal__series._internal_options().base, ensureNotNull(this._internal__series._internal_firstValue())._internal_value),
+            _internal_columns: this._internal__series._internal_options().columns,
+            _internal_columnWidth: this._internal__series._internal_options().columnWidth,
         };
         this._internal__renderer._internal_setData(data);
     }
@@ -2950,8 +3110,10 @@ class SeriesLinePaneView extends LinePaneViewBase {
         const options = this._internal__series._internal_options();
         const data = {
             _internal_items: this._internal__items,
+            _internal_withBreaks: options.withBreaks,
             _internal_lineStyle: options.lineStyle,
             _internal_lineType: options.lineVisible ? options.lineType : undefined,
+            _internal_markerType: options.markerType,
             _internal_lineWidth: options.lineWidth,
             _internal_pointMarkersRadius: options.pointMarkersVisible ? (options.pointMarkersRadius || options.lineWidth / 2 + 2) : undefined,
             _internal_visibleRange: this._internal__itemsVisibleRange,
@@ -8044,6 +8206,20 @@ var LastPriceAnimationMode;
      */
     LastPriceAnimationMode[LastPriceAnimationMode["OnDataUpdate"] = 2] = "OnDataUpdate";
 })(LastPriceAnimationMode || (LastPriceAnimationMode = {}));
+/**
+ * Represents the type of the marker shape for series to draw with(currently applicable for area and line series).
+ */
+var MarkerType;
+(function (MarkerType) {
+    /**
+     * Marker is  none
+     */
+    MarkerType[MarkerType["None"] = 0] = "None";
+    /**
+     * Marker is Diamond.
+     */
+    MarkerType[MarkerType["Diamond"] = 1] = "Diamond";
+})(MarkerType || (MarkerType = {}));
 function precisionByMinMove(minMove) {
     if (minMove >= 1) {
         return 0;
@@ -13674,7 +13850,7 @@ const customSeriesDefaultOptions = Object.assign(Object.assign({}, seriesOptions
  * Returns the current version as a string. For example `'3.3.0'`.
  */
 function version() {
-    return "4.3.1-dev+202407041442";
+    return "4.3.1-dev+202407291514";
 }
 
-export { ColorType, CrosshairMode, LastPriceAnimationMode, LineStyle, LineType, MismatchDirection, PriceLineSource, PriceScaleMode, TickMarkType, TrackingModeExitMode, createChart, createChartEx, customSeriesDefaultOptions, isBusinessDay, isUTCTimestamp, version };
+export { ColorType, CrosshairMode, LastPriceAnimationMode, LineStyle, LineType, MarkerType, MismatchDirection, PriceLineSource, PriceScaleMode, TickMarkType, TrackingModeExitMode, createChart, createChartEx, customSeriesDefaultOptions, isBusinessDay, isUTCTimestamp, version };

@@ -86,7 +86,28 @@ export declare enum LineType {
 	/**
 	 * A curved line.
 	 */
-	Curved = 2
+	Curved = 2,
+	/**
+	 * Line with crosses.
+	 */
+	Cross = 3,
+	/**
+	 * Line with circles.
+	 */
+	Circle = 4
+}
+/**
+ * Represents the type of the marker shape for series to draw with(currently applicable for area and line series).
+ */
+export declare enum MarkerType {
+	/**
+	 * Marker is  none
+	 */
+	None = 0,
+	/**
+	 * Marker is Diamond.
+	 */
+	Diamond = 1
 }
 /**
  * Search direction if no data found at provided index
@@ -289,6 +310,12 @@ export interface AreaStyleOptions {
 	 * @defaultValue `true`
 	 */
 	lineVisible: boolean;
+	/**
+	 * Draw series with breaks.
+	 *
+	 * @defaultValue `false`
+	 */
+	withBreaks: boolean;
 	/**
 	 * Show circle markers on each point.
 	 *
@@ -1051,6 +1078,18 @@ export interface HistogramStyleOptions {
 	 * @defaultValue `0`
 	 */
 	base: number;
+	/**
+	 * draws columns instead of histograms when enabled.
+	 *
+	 * @defaultValue `false`
+	 */
+	columns: boolean;
+	/**
+	 * thickness of the columns.
+	 *
+	 * @defaultValue `1`
+	 */
+	columnWidth: number;
 }
 /**
  * Options for the time scale; the horizontal scale at the bottom of the chart that displays the time of data.
@@ -2392,11 +2431,23 @@ export interface LineStyleOptions {
 	 */
 	lineType: LineType;
 	/**
+	 * Draw series with breaks.
+	 *
+	 * @defaultValue `false`
+	 */
+	withBreaks: boolean;
+	/**
 	 * Show series line.
 	 *
 	 * @defaultValue `true`
 	 */
 	lineVisible: boolean;
+	/**
+	 * marker type to draw series with.
+	 *
+	 * @defaultValue `None`
+	 */
+	markerType: MarkerType;
 	/**
 	 * Show circle markers on each point.
 	 *
