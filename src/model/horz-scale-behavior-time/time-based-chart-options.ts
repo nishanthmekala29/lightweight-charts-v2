@@ -13,6 +13,7 @@ export interface TimeScaleOptions extends HorzScaleOptions {
 	 * @defaultValue `undefined`
 	 */
 	tickMarkFormatter?: TickMarkFormatter;
+	tickMarkWeightCalculator?: (time: Time) => number
 }
 
 /**

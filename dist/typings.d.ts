@@ -1037,6 +1037,18 @@ export interface HandleScrollOptions {
 	 */
 	pressedMouseMove: boolean;
 	/**
+	 * Enable horizontal scrolling by holding down the left mouse button and moving the mouse.
+	 *
+	 * @defaultValue `true`
+	 */
+	pressedHorizontalMouseMove: boolean;
+	/**
+	 * Enable vertical scrolling by holding down the left mouse button and moving the mouse.
+	 *
+	 * @defaultValue `true`
+	 */
+	pressedVerticalMouseMove: boolean;
+	/**
 	 * Enable horizontal touch scrolling.
 	 *
 	 * When enabled the chart handles touch gestures that would normally scroll the webpage horizontally.
@@ -1226,6 +1238,12 @@ export interface HorzScaleOptions {
 	 * @defaultValue true
 	 */
 	allowBoldLabels: boolean;
+	/**
+	 * Skip rendering of points with zero weight.
+	 *
+	 * @defaultValue false
+	 */
+	skipZeroWeightTicks: boolean;
 }
 /**
  * The main interface of a single chart using time for horizontal scale.
@@ -3305,6 +3323,7 @@ export interface TimeScaleOptions extends HorzScaleOptions {
 	 * @defaultValue `undefined`
 	 */
 	tickMarkFormatter?: TickMarkFormatter;
+	tickMarkWeightCalculator?: (time: Time) => number;
 }
 /**
  * Represents a point on the time scale

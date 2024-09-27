@@ -209,6 +209,13 @@ export interface HorzScaleOptions {
 	 * @defaultValue true
 	 */
 	allowBoldLabels: boolean;
+
+	/**
+	 * Skip rendering of points with zero weight.
+	 *
+	 * @defaultValue false
+	 */
+	skipZeroWeightTicks: boolean
 }
 
 export interface ITimeScale {
@@ -273,6 +280,7 @@ export class TimeScale<HorzScaleItem> implements ITimeScale {
 		this._updateDateTimeFormatter();
 
 		this._tickMarks.setUniformDistribution(options.uniformDistribution);
+		if (options.skipZeroWeightTicks !== undefined) this._tickMarks.setSkipZeroWeightTicks(options.skipZeroWeightTicks)
 	}
 
 	public options(): Readonly<HorzScaleOptions> {
@@ -312,6 +320,8 @@ export class TimeScale<HorzScaleItem> implements ITimeScale {
 			// the easiest way is to apply it once again
 			this._model.setBarSpacing(options.barSpacing ?? this._barSpacing);
 		}
+
+		if (options.skipZeroWeightTicks !== undefined) this._tickMarks.setSkipZeroWeightTicks(options.skipZeroWeightTicks)
 
 		this._invalidateTickMarks();
 		this._updateDateTimeFormatter();

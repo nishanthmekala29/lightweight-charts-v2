@@ -1,6 +1,6 @@
 /*!
  * @license
- * TradingView Lightweight Charts™ v4.3.1-dev+202407291514
+ * TradingView Lightweight Charts™ v4.3.2-dev+202409271006
  * Copyright (c) 2024 TradingView, Inc.
  * Licensed under Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -6684,6 +6684,7 @@ function areRangesEqual(first, second) {
 
 class TickMarks {
     constructor() {
+        this._private_skipZeroWeightTicks = false;
         this._private__marksByWeight = new Map();
         this._private__cache = null;
         this._private__uniformDistribution = false;
@@ -6691,6 +6692,9 @@ class TickMarks {
     _internal_setUniformDistribution(val) {
         this._private__uniformDistribution = val;
         this._private__cache = null;
+    }
+    _internal_setSkipZeroWeightTicks(val) {
+        this._private_skipZeroWeightTicks = val;
     }
     _internal_setTimeScalePoints(newPoints, firstChangedPointIndex) {
         this._private__removeMarksSinceIndex(firstChangedPointIndex);
@@ -6741,7 +6745,7 @@ class TickMarks {
     _private__buildMarksImpl(maxIndexesPerMark) {
         let marks = [];
         for (const weight of Array.from(this._private__marksByWeight.keys()).sort((a, b) => b - a)) {
-            if (!this._private__marksByWeight.get(weight)) {
+            if (!this._private__marksByWeight.get(weight) || (this._private_skipZeroWeightTicks && !weight)) {
                 continue;
             }
             // Built tickMarks are now prevMarks, and marks it as new array
@@ -6839,6 +6843,8 @@ class TimeScale {
         this._private__horzScaleBehavior = horzScaleBehavior;
         this._private__updateDateTimeFormatter();
         this._private__tickMarks._internal_setUniformDistribution(options.uniformDistribution);
+        if (options.skipZeroWeightTicks !== undefined)
+            this._private__tickMarks._internal_setSkipZeroWeightTicks(options.skipZeroWeightTicks);
     }
     _internal_options() {
         return this._private__options;
@@ -6870,6 +6876,8 @@ class TimeScale {
             // the easiest way is to apply it once again
             this._private__model._internal_setBarSpacing((_a = options.barSpacing) !== null && _a !== void 0 ? _a : this._private__barSpacing);
         }
+        if (options.skipZeroWeightTicks !== undefined)
+            this._private__tickMarks._internal_setSkipZeroWeightTicks(options.skipZeroWeightTicks);
         this._private__invalidateTickMarks();
         this._private__updateDateTimeFormatter();
         this._private__optionsApplied._internal_fire();
@@ -8440,7 +8448,7 @@ function weightByTime(currentDate, prevDate) {
 function cast(t) {
     return t;
 }
-function fillWeightsForPoints(sortedTimePoints, startIndex = 0) {
+function fillWeightsForPoints(sortedTimePoints, startIndex = 0, tickMarkWeightCalculator) {
     if (sortedTimePoints.length === 0) {
         return;
     }
@@ -8451,7 +8459,7 @@ function fillWeightsForPoints(sortedTimePoints, startIndex = 0) {
         const currentPoint = sortedTimePoints[index];
         const currentDate = new Date(cast(currentPoint.time)._internal_timestamp * 1000);
         if (prevDate !== null) {
-            currentPoint.timeWeight = weightByTime(currentDate, prevDate);
+            currentPoint.timeWeight = tickMarkWeightCalculator ? tickMarkWeightCalculator(cast(currentPoint.time)._internal_timestamp) : weightByTime(currentDate, prevDate);
         }
         totalTimeDiff += cast(currentPoint.time)._internal_timestamp - (prevTime || cast(currentPoint.time)._internal_timestamp);
         prevTime = cast(currentPoint.time)._internal_timestamp;
@@ -8640,7 +8648,7 @@ class HorzScaleBehaviorTime {
         return maxWeight;
     }
     fillWeightsForPoints(sortedTimePoints, startIndex) {
-        fillWeightsForPoints(sortedTimePoints, startIndex);
+        fillWeightsForPoints(sortedTimePoints, startIndex, this._private__options.timeScale.tickMarkWeightCalculator);
     }
     static _internal_applyDefaults(options) {
         return merge({ localization: { dateFormat: 'dd MMM \'yy' } }, options !== null && options !== void 0 ? options : {});
@@ -10808,20 +10816,24 @@ class PaneWidget {
             else {
                 this._private__scrollXAnimation = null;
             }
-            if (!priceScale._internal_isEmpty()) {
+            if (!priceScale._internal_isEmpty() && scrollOptions.pressedVerticalMouseMove) {
                 model._internal_startScrollPrice(this._private__state, priceScale, event.localY);
             }
-            model._internal_startScrollTime(event.localX);
-            this._private__isScrolling = true;
+            if (scrollOptions.pressedHorizontalMouseMove) {
+                model._internal_startScrollTime(event.localX);
+                this._private__isScrolling = true;
+            }
         }
         if (this._private__isScrolling) {
             // this allows scrolling not default price scales
-            if (!priceScale._internal_isEmpty()) {
+            if (!priceScale._internal_isEmpty() && scrollOptions.pressedVerticalMouseMove) {
                 model._internal_scrollPriceTo(this._private__state, priceScale, event.localY);
             }
-            model._internal_scrollTimeTo(event.localX);
-            if (this._private__scrollXAnimation !== null) {
-                this._private__scrollXAnimation._internal_addPosition(timeScale._internal_rightOffset(), now);
+            if (scrollOptions.pressedHorizontalMouseMove) {
+                model._internal_scrollTimeTo(event.localX);
+                if (this._private__scrollXAnimation !== null) {
+                    this._private__scrollXAnimation._internal_addPosition(timeScale._internal_rightOffset(), now);
+                }
             }
         }
     }
@@ -12620,6 +12632,7 @@ const timeScaleOptionsDefaults = {
     uniformDistribution: false,
     minimumHeight: 0,
     allowBoldLabels: true,
+    skipZeroWeightTicks: false
 };
 
 const watermarkOptionsDefaults = {
@@ -12653,6 +12666,8 @@ function chartOptionsDefaults() {
         },
         handleScroll: {
             mouseWheel: true,
+            pressedHorizontalMouseMove: true,
+            pressedVerticalMouseMove: true,
             pressedMouseMove: true,
             horzTouchDrag: true,
             vertTouchDrag: true,
@@ -13455,7 +13470,7 @@ const customSeriesDefaultOptions = Object.assign(Object.assign({}, seriesOptions
  * Returns the current version as a string. For example `'3.3.0'`.
  */
 function version() {
-    return "4.3.1-dev+202407291514";
+    return "4.3.2-dev+202409271006";
 }
 
 export { ColorType, CrosshairMode, LastPriceAnimationMode, LineStyle, LineType, MarkerType, MismatchDirection, PriceLineSource, PriceScaleMode, TickMarkType, TrackingModeExitMode, createChart, createChartEx, customSeriesDefaultOptions, isBusinessDay, isUTCTimestamp, version };

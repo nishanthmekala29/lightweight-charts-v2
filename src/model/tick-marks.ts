@@ -24,6 +24,7 @@ interface MarksCache {
 }
 
 export class TickMarks<HorzScaleItem> {
+	private skipZeroWeightTicks = false;
 	private _marksByWeight: Map<TickMarkWeightValue, TickMark[]> = new Map();
 	private _cache: MarksCache | null = null;
 	private _uniformDistribution: boolean = false;
@@ -31,6 +32,10 @@ export class TickMarks<HorzScaleItem> {
 	public setUniformDistribution(val: boolean): void {
 		this._uniformDistribution = val;
 		this._cache = null;
+	}
+
+	public setSkipZeroWeightTicks(val: boolean): void {
+		this.skipZeroWeightTicks = val;
 	}
 
 	public setTimeScalePoints(newPoints: readonly TimeScalePoint[], firstChangedPointIndex: number): void {
@@ -95,7 +100,7 @@ export class TickMarks<HorzScaleItem> {
 		let marks: TickMark[] = [];
 
 		for (const weight of Array.from(this._marksByWeight.keys()).sort((a: number, b: number) => b - a)) {
-			if (!this._marksByWeight.get(weight)) {
+			if (!this._marksByWeight.get(weight) || (this.skipZeroWeightTicks && !weight)) {
 				continue;
 			}
 

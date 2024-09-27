@@ -40,6 +40,8 @@ export function chartOptionsDefaults<HorzScaleItem>(): ChartOptionsInternal<Horz
 		},
 		handleScroll: {
 			mouseWheel: true,
+			pressedHorizontalMouseMove: true,
+			pressedVerticalMouseMove: true,
 			pressedMouseMove: true,
 			horzTouchDrag: true,
 			vertTouchDrag: true,
